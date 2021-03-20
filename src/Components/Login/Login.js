@@ -1,14 +1,8 @@
-import firebase from "firebase/app";
-import "firebase/auth";
-import firebaseConfig from './firebase.config';
+
 import { useContext, useState } from 'react';
 import { UserContext } from "../../App";
 import { useHistory, useLocation } from "react-router";
-
-
-if (firebase.apps.length === 0) {
-  firebase.initializeApp(firebaseConfig);
-}
+import { createUserWithEmailAndPassword, handleFbSignIn, handleGoogleSignIn, handleSignOut, initializeLoginFramework, signInWithEmailAndPassword } from './LoginManeger';
 
 
 function Login() {
@@ -22,64 +16,40 @@ function Login() {
     success: false,
     error: ''
   })
+  initializeLoginFramework();
 
   const [loggedInUser, setLoggedInUser] = useContext(UserContext);
   const history = useHistory();
   const location = useLocation();
   const { from } = location.state || { from: { pathname: "/" } };
 
-  const googleProvider = new firebase.auth.GoogleAuthProvider();
-  const fbProvider = new firebase.auth.FacebookAuthProvider();
+  
+  const googleSignIn = () => {
+    handleGoogleSignIn()
+    .then(res => {
+      setUser(res);
+      setLoggedInUser(res);
+      history.replace(from);
+    })
+  };
 
-  const handleSignIn = () => {
-    firebase.auth().signInWithPopup(googleProvider)
-      .then(res => {
-        const { displayName, photoURL, email } = res.user;
-        const singedInUser = {
-          isSignedIn: true,
-          name: displayName,
-          email: email,
-          photo: photoURL
-        }
-        setUser(singedInUser)
-        console.log(displayName, photoURL, email);
-      })
-      .catch(err => {
-        console.log(err)
-        console.log(err.message);
-      })
+  const fbSignIn = () => {
+    handleFbSignIn()
+    .then(res => {
+      setUser(res);
+      setLoggedInUser(res);
+      history.replace(from);
+    })
   }
 
-  const handleFbSignIn = () => {
-    firebase.auth().signInWithPopup(fbProvider)
-      .then(result => {
-        /** @type {firebase.auth.OAuthCredential} */
-        var token = result.credential.accessToken;
-        var user = result.user;
-        console.log(user);
-      })
-      .catch((error) => {
-        var errorCode = error.code;
-        var errorMessage = error.message;
-        var email = error.email;
-        var credential = error.credential;
-      });
-  }
-  const handleSignOut = () => {
-    firebase.auth().signOut()
-      .then(res => {
-        const signedOutUser = {
-          isSignedIn: false,
-          name: '',
-          email: '',
-          photo: ''
-        }
-        setUser(signedOutUser)
-      })
-      .catch(err => {
+  const signOut = () => {
+    handleSignOut() 
+    .then(res => {
+      setUser(res);
+      loggedInUser(res);
+    })
+  };
 
-      })
-  }
   const handleBlur = (event) => {
     // console.log(event.target.name)
     // console.log(event.target.value)
@@ -98,65 +68,34 @@ function Login() {
       newUserInfo[event.target.name] = event.target.value;
       setUser(newUserInfo);
     }
-  }
+  };
+
   const handleSubmit = (event) => {
     // console.log(user.email, user.password);
     if (newUser && user.email && user.password) {
-      firebase.auth().createUserWithEmailAndPassword(user.email, user.password)
+      createUserWithEmailAndPassword(user.name,user.email, user.password)
         .then(res => {
-          const newUserInfo = { ...user };
-          newUserInfo.error = '';
-          newUserInfo.success = true;
-          setUser(newUserInfo)
-          updateUserName(user.name);
-        })
-        .catch(error => {
-          const newUserInfo = { ...user };
-          newUserInfo.error = error.message;
-          newUserInfo.success = false;
-          setUser(newUserInfo);
-        });
-
-    }
-    if (!newUser && user.email && user.password) {
-      firebase.auth().signInWithEmailAndPassword(user.email, user.password)
-        .then(res => {
-          const newUserInfo = { ...user };
-          newUserInfo.error = '';
-          newUserInfo.success = true;
-          setUser(newUserInfo);
-          setLoggedInUser(newUserInfo);
+          setUser(res);
+          setLoggedInUser(res);
           history.replace(from);
         })
-        .catch((error) => {
-          const newUserInfo = { ...user };
-          newUserInfo.error = error.message;
-          newUserInfo.success = false;
-          setUser(newUserInfo);
-        });
     }
-
+    if (!newUser && user.email && user.password) {
+       signInWithEmailAndPassword(user.email, user.password)
+       .then(res => {
+        setUser(res);
+        setLoggedInUser(res);
+        history.replace(from);
+      })
+    }
     event.preventDefault();
   }
-
-  const updateUserName = name => {
-    const user = firebase.auth().currentUser;
-
-    user.updateProfile({
-      displayName: name
-    }).then(function () {
-      // Update successful.
-    }).catch(function (error) {
-      // An error happened.
-    });
-  }
-
   return (
     <div className={{ textAlign: 'center' }}>
-      { user.isSignedIn ? <button onClick={handleSignOut}> Sign out</button> :
-        <button onClick={handleSignIn}> Sign in</button>
+      { user.isSignedIn ? <button onClick={signOut}> Sign out</button> :
+        <button onClick={googleSignIn}> Sign in</button>
       }
-      <button onClick={handleFbSignIn}>Sign in using Facebook</button>
+      <button onClick={fbSignIn}>Sign in using Facebook</button>
       {
         user.isSignedIn && <div>
           <p>Welcome {user.name} </p>
