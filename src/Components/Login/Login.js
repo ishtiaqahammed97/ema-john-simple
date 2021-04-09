@@ -22,6 +22,7 @@ function Login() {
   const history = useHistory();
   const location = useLocation();
   const { from } = location.state || { from: { pathname: "/" } };
+  document.title = "Login";
 
   
   const googleSignIn = () => {

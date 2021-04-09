@@ -7,7 +7,7 @@ import './Header.css'
 const Header = () => {
     const [loggedInUser, setLoggedInUser] = useContext(UserContext);
     return (
-        <div class="header">
+        <div className="header">
             <img src={logo} alt=""/>
             <nav>
                 <Link to="/shop">Shop</Link>
