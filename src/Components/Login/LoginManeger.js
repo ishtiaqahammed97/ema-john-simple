@@ -8,6 +8,8 @@ export const initializeLoginFramework = () => {
       }
 }
 
+
+
 export const handleGoogleSignIn = () => {
     const googleProvider = new firebase.auth.GoogleAuthProvider();
     return firebase.auth().signInWithPopup(googleProvider)
@@ -19,7 +21,8 @@ export const handleGoogleSignIn = () => {
           email: email,
           photo: photoURL,
           success: true
-        }
+        };
+        setUserToken();
         return singedInUser;
         // console.log(displayName, photoURL, email);
       })
@@ -28,6 +31,14 @@ export const handleGoogleSignIn = () => {
         console.log(err.message);
       })
   };
+
+  const setUserToken = () => {
+    firebase.auth().currentUser.getIdToken(/* forceRefresh */ true).then(function(idToken) {
+      sessionStorage.setItem('token', idToken)
+    }).catch(function(error) {
+      // Handle error
+    });
+  }
 
 export const handleFbSignIn = () => {
     const fbProvider = new firebase.auth.FacebookAuthProvider();
